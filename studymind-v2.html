@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyMind AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0b0c10;
+  --surface: #13141a;
+  --surface2: #1b1c24;
+  --surface3: #22232e;
+  --border: #2c2d3a;
+  --border2: #3a3b4e;
+  --accent: #a8f060;
+  --accent2: #7b6cf6;
+  --accent3: #f06090;
+  --text: #eeedf6;
+  --muted: #72738a;
+  --muted2: #4a4b60;
+  --danger: #f05050;
+  --r: 12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 60% 40% at 20% 0%,rgba(123,108,246,0.07) 0%,transparent 60%),radial-gradient(ellipse 40% 30% at 80% 100%,rgba(168,240,96,0.05) 0%,transparent 60%);pointer-events:none;}
+
+.wrap{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:40px 24px 100px;}
+
+/* Header */
+header{text-align:center;margin-bottom:44px;}
+.logo{font-family:'Instrument Serif',serif;font-size:44px;letter-spacing:-1.5px;line-height:1;}
+.logo em{color:var(--accent);font-style:italic;}
+.sub{font-size:13px;color:var(--muted);margin-top:10px;letter-spacing:.08em;text-transform:uppercase;}
+
+/* API row */
+.api-bar{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 18px;margin-bottom:28px;}
+.api-bar label{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);white-space:nowrap;}
+.api-bar input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;}
+.api-bar input::placeholder{color:var(--muted2);}
+.key-ok{font-size:11px;font-family:'DM Mono',monospace;color:var(--accent);}
+.key-err{font-size:11px;font-family:'DM Mono',monospace;color:var(--danger);}
+
+/* Section label */
+.sec-label{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px;}
+
+/* Input sources tabs */
+.input-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:16px;overflow:hidden;}
+.tab-bar{display:flex;border-bottom:1px solid var(--border);background:var(--surface);}
+.tab{padding:12px 20px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none;}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-content{display:none;padding:20px;}
+.tab-content.active{display:block;}
+
+/* Text area */
+textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;line-height:1.65;padding:14px;resize:vertical;min-height:140px;outline:none;transition:border-color .2s;}
+textarea:focus{border-color:var(--accent2);}
+textarea::placeholder{color:var(--muted2);}
+
+/* Drop zone */
+.dropzone{
+  border:2px dashed var(--border2);border-radius:10px;padding:36px 20px;text-align:center;
+  cursor:pointer;transition:all .2s;background:var(--surface2);position:relative;
+}
+.dropzone:hover,.dropzone.over{border-color:var(--accent2);background:color-mix(in srgb,var(--accent2) 6%,var(--surface2));}
+.dropzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.dz-icon{font-size:32px;margin-bottom:10px;}
+.dz-text{font-size:14px;color:var(--muted);}
+.dz-text strong{color:var(--text);}
+.dz-types{font-size:11px;font-family:'DM Mono',monospace;color:var(--muted2);margin-top:6px;}
+
+/* File preview list */
+.file-list{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+.file-item{display:flex;align-items:center;gap:10px;background:var(--surface3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;}
+.file-icon{font-size:18px;flex-shrink:0;}
+.file-info{flex:1;min-width:0;}
+.file-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.file-meta{font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);}
+.file-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px 6px;border-radius:4px;transition:color .15s;}
+.file-del:hover{color:var(--danger);}
+.file-preview-thumb{width:36px;height:36px;border-radius:5px;object-fit:cover;border:1px solid var(--border);}
+.file-badge{font-size:10px;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:4px;font-weight:500;}
+.badge-pdf{background:color-mix(in srgb,#f06060 15%,transparent);color:#f08080;}
+.badge-img{background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent);}
+.badge-txt{background:color-mix(in srgb,var(--accent2) 15%,transparent);color:#a090ff;}
+
+/* Settings row */
+.settings-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;}
+select{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:13px;font-family:'Outfit',sans-serif;outline:none;width:100%;cursor:pointer;appearance:none;transition:border-color .2s;}
+select:focus{border-color:var(--accent2);}
+
+/* Output toggles */
+.outputs-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.tog{background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:8px 15px;border-radius:999px;font-size:13px;font-family:'Outfit',sans-serif;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px;user-select:none;}
+.tog.on{background:color-mix(in srgb,var(--accent) 12%,transparent);border-color:color-mix(in srgb,var(--accent) 60%,transparent);color:var(--accent);}
+.tog .pip{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0;}
+
+/* Generate button */
+.gen-btn{width:100%;padding:16px;background:var(--accent);color:#0b0c10;font-size:15px;font-weight:600;font-family:'Outfit',sans-serif;border:none;border-radius:10px;cursor:pointer;margin-top:20px;transition:opacity .15s,transform .1s;letter-spacing:.02em;}
+.gen-btn:hover{opacity:.88;transform:translateY(-1px);}
+.gen-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+
+/* Results */
+#results{margin-top:36px;}
+.r-block{margin-bottom:18px;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.r-head{background:var(--surface);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+.r-label{font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;}
+.r-status{font-size:11px;font-family:'DM Mono',monospace;}
+.s-loading{color:var(--accent2);}
+.s-done{color:var(--accent);}
+.s-err{color:var(--danger);}
+.r-body{background:var(--surface2);padding:20px;font-size:14px;line-height:1.75;color:#d4d3e6;white-space:pre-wrap;min-height:60px;}
+
+/* Flashcards */
+.fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;padding:14px;background:var(--surface2);}
+.fc{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:15px;cursor:pointer;transition:border-color .15s,transform .15s;}
+.fc:hover{border-color:var(--accent2);transform:translateY(-1px);}
+.fc .q{font-size:13px;font-weight:500;color:var(--text);}
+.fc .a{font-size:12px;color:var(--muted);margin-top:8px;display:none;}
+.fc.flipped .a{display:block;}
+.fc.flipped .q{color:var(--accent);}
+.fc-tip{font-size:11px;color:var(--muted);text-align:center;padding:8px;font-family:'DM Mono',monospace;background:var(--surface2);}
+
+/* Quiz */
+.quiz-list{padding:14px;background:var(--surface2);display:flex;flex-direction:column;gap:14px;}
+.quiz-q{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:15px;}
+.quiz-q .qt{font-size:14px;font-weight:500;margin-bottom:10px;}
+.quiz-q .opts{display:flex;flex-direction:column;gap:6px;}
+.opt{font-size:13px;color:var(--muted);padding:8px 12px;border:1px solid var(--border);border-radius:7px;cursor:pointer;transition:all .12s;}
+.opt:hover{border-color:var(--accent2);color:var(--text);}
+.opt.correct{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);}
+.opt.wrong{border-color:var(--danger);color:var(--danger);background:color-mix(in srgb,var(--danger) 8%,transparent);}
+
+/* Keywords */
+.kw-list{padding:16px;background:var(--surface2);display:flex;flex-direction:column;gap:10px;}
+.kw-row{display:flex;gap:12px;align-items:baseline;}
+.kw-term{font-weight:500;color:var(--accent);min-width:130px;font-size:13px;flex-shrink:0;}
+.kw-def{font-size:13px;color:var(--muted);}
+
+/* Spinner */
+@keyframes spin{to{transform:rotate(360deg);}}
+.spin{display:inline-block;width:11px;height:11px;border:2px solid var(--border2);border-top-color:var(--accent2);border-radius:50%;animation:spin .65s linear infinite;vertical-align:middle;}
+
+.empty{text-align:center;padding:56px 20px;color:var(--muted);}
+.empty-ico{font-size:40px;margin-bottom:14px;}
+.empty p{font-size:14px;}
+
+/* Progress bar */
+.progress-bar{height:3px;background:var(--border);border-radius:2px;margin-top:12px;overflow:hidden;display:none;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:2px;transition:width .4s;}
+
+@media(max-width:600px){.settings-row{grid-template-columns:1fr 1fr;}.settings-row select:last-child{grid-column:1/-1;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">Study<em>Mind</em> <span style="font-size:18px;vertical-align:super;font-family:'DM Mono',monospace;color:var(--muted)">v2</span></div>
+    <div class="sub">PDF · Images · Text → Smart study material</div>
+  </header>
+
+  <!-- API KEY -->
+  <div class="api-bar">
+    <label>API KEY</label>
+    <input type="password" id="apiKey" placeholder="sk-ant-api03-..." oninput="checkKey()"/>
+    <span id="apiStatus"></span>
+    <button onclick="testKey()" style="background:var(--surface3);border:1px solid var(--border2);color:var(--muted);padding:5px 12px;border-radius:6px;font-size:12px;font-family:'DM Mono',monospace;cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">Test key</button>
+  </div>
+  <div id="apiError" style="display:none;background:color-mix(in srgb,var(--danger) 10%,var(--surface));border:1px solid color-mix(in srgb,var(--danger) 40%,transparent);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;font-family:'DM Mono',monospace;color:var(--danger);white-space:pre-wrap;"></div>
+
+  <!-- INPUT CARD (tabbed) -->
+  <div class="input-card">
+    <div class="tab-bar">
+      <div class="tab active" onclick="switchTab('files',this)">📂 Files</div>
+      <div class="tab" onclick="switchTab('text',this)">✏️ Text</div>
+      <div class="tab" onclick="switchTab('both',this)">🔀 Both</div>
+    </div>
+
+    <!-- FILES TAB -->
+    <div class="tab-content active" id="tab-files">
+      <div class="dropzone" id="dropzone"
+        ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dzDrop(event)">
+        <input type="file" id="fileInput" multiple
+          accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.bmp,.txt,.md"
+          onchange="handleFiles(this.files)"/>
+        <div class="dz-icon">📎</div>
+        <div class="dz-text"><strong>Drop files here</strong> or click to browse</div>
+        <div class="dz-types">PDF · PNG · JPG · WEBP · GIF · BMP · TXT · MD</div>
+      </div>
+      <div class="file-list" id="fileList"></div>
+    </div>
+
+    <!-- TEXT TAB -->
+    <div class="tab-content" id="tab-text">
+      <textarea id="notes" placeholder="Paste your notes, lecture text, or any content you want to study from..." rows="8"></textarea>
+    </div>
+
+    <!-- BOTH TAB -->
+    <div class="tab-content" id="tab-both">
+      <div class="dropzone" id="dropzone2"
+        ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dzDrop(event)">
+        <input type="file" id="fileInput2" multiple
+          accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.bmp,.txt,.md"
+          onchange="handleFiles(this.files)"/>
+        <div class="dz-icon">📎</div>
+        <div class="dz-text"><strong>Drop files</strong> or click to browse</div>
+        <div class="dz-types">PDF · PNG · JPG · WEBP · GIF · BMP · TXT · MD</div>
+      </div>
+      <div class="file-list" id="fileList2"></div>
+      <div style="margin-top:14px;">
+        <textarea id="notes2" placeholder="Add extra notes, context, or instructions here..." rows="4"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="settings-row">
+    <select id="subject">
+      <option value="">Subject (optional)</option>
+      <option>Biology</option><option>Chemistry</option><option>Physics</option>
+      <option>Mathematics</option><option>History</option><option>Economics</option>
+      <option>Computer Science</option><option>Literature</option><option>Geography</option>
+      <option>Law</option><option>Medicine</option><option>Psychology</option><option>Other</option>
+    </select>
+    <select id="level">
+      <option value="">Difficulty level</option>
+      <option>Beginner</option><option>Intermediate</option><option>Advanced</option><option>Expert</option>
+    </select>
+    <select id="goal">
+      <option value="">Study goal</option>
+      <option>Exam prep</option><option>Quick revision</option><option>Deep understanding</option>
+      <option>Memorization</option><option>Concept mapping</option>
+    </select>
+  </div>
+
+  <!-- OUTPUTS -->
+  <div class="input-card" style="padding:18px;">
+    <div class="sec-label">Generate outputs</div>
+    <div class="outputs-grid" id="outputToggles">
+      <button class="tog on" data-key="summary" onclick="togOut(this)"><span class="pip"></span>Summary</button>
+      <button class="tog on" data-key="flashcards" onclick="togOut(this)"><span class="pip"></span>Flashcards</button>
+      <button class="tog on" data-key="quiz" onclick="togOut(this)"><span class="pip"></span>Quiz / MCQs</button>
+      <button class="tog" data-key="mindmap" onclick="togOut(this)"><span class="pip"></span>Mind Map</button>
+      <button class="tog" data-key="studyplan" onclick="togOut(this)"><span class="pip"></span>Study Plan</button>
+      <button class="tog" data-key="explain" onclick="togOut(this)"><span class="pip"></span>Simple Explanation</button>
+      <button class="tog" data-key="keywords" onclick="togOut(this)"><span class="pip"></span>Key Terms</button>
+    </div>
+  </div>
+
+  <button class="gen-btn" id="genBtn" onclick="generate()">✦ Generate Study Material</button>
+  <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+  <div id="results">
+    <div class="empty"><div class="empty-ico">🧠</div><p>Your smart study materials will appear here</p></div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let uploadedFiles = [];
+let activeOutputs = new Set(['summary','flashcards','quiz']);
+let currentTab = 'files';
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+// ── API key ────────────────────────────────────────────────────────────────
+function checkKey() {
+  const k = document.getElementById('apiKey').value.trim();
+  const s = document.getElementById('apiStatus');
+  if (!k) { s.textContent=''; return; }
+  if (k.startsWith('sk-ant-')) { s.textContent='● valid format'; s.className='key-ok'; }
+  else { s.textContent='✕ unexpected format'; s.className='key-err'; }
+}
+
+function showApiError(msg) {
+  const el = document.getElementById('apiError');
+  el.textContent = msg; el.style.display = 'block';
+}
+function hideApiError() { document.getElementById('apiError').style.display='none'; }
+
+async function testKey() {
+  const k = document.getElementById('apiKey').value.trim();
+  if (!k) { showApiError('Paste your API key first.'); return; }
+  const s = document.getElementById('apiStatus');
+  s.textContent = '…testing'; s.className = 'key-ok';
+  hideApiError();
+  try {
+    await callClaude([{type:'text',text:'Reply with just: OK'}], k);
+    s.textContent = '✓ key works!'; s.className = 'key-ok';
+  } catch(e) {
+    s.textContent = '✕ failed'; s.className = 'key-err';
+    showApiError('Key test failed:\n' + e.message);
+  }
+}
+
+// ── File handling ──────────────────────────────────────────────────────────
+const SUPPORTED = {
+  'application/pdf': { icon:'📄', badge:'badge-pdf', label:'PDF', mediaType:'application/pdf', isText:false },
+  'image/png':       { icon:'🖼️', badge:'badge-img', label:'PNG', mediaType:'image/png', isText:false },
+  'image/jpeg':      { icon:'🖼️', badge:'badge-img', label:'JPG', mediaType:'image/jpeg', isText:false },
+  'image/jpg':       { icon:'🖼️', badge:'badge-img', label:'JPG', mediaType:'image/jpeg', isText:false },
+  'image/webp':      { icon:'🖼️', badge:'badge-img', label:'WEBP', mediaType:'image/webp', isText:false },
+  'image/gif':       { icon:'🖼️', badge:'badge-img', label:'GIF', mediaType:'image/gif', isText:false },
+  'image/bmp':       { icon:'🖼️', badge:'badge-img', label:'BMP', mediaType:'image/png', isText:false },
+  'text/plain':      { icon:'📝', badge:'badge-txt', label:'TXT', mediaType:null, isText:true },
+  'text/markdown':   { icon:'📝', badge:'badge-txt', label:'MD',  mediaType:null, isText:true },
+};
+
+function getFileType(file) {
+  let t = file.type;
+  if (!t || t === 'application/octet-stream') {
+    const ext = file.name.split('.').pop().toLowerCase();
+    const map = { pdf:'application/pdf', png:'image/png', jpg:'image/jpeg', jpeg:'image/jpeg',
+                  webp:'image/webp', gif:'image/gif', bmp:'image/bmp', txt:'text/plain', md:'text/markdown' };
+    t = map[ext] || t;
+  }
+  return t;
+}
+
+function formatSize(b) {
+  if (b<1024) return b+'B';
+  if (b<1048576) return (b/1024).toFixed(1)+'KB';
+  return (b/1048576).toFixed(1)+'MB';
+}
+
+function dzOver(e) { e.preventDefault(); e.currentTarget.classList.add('over'); }
+function dzLeave(e) { e.currentTarget.classList.remove('over'); }
+function dzDrop(e) {
+  e.preventDefault(); e.currentTarget.classList.remove('over');
+  handleFiles(e.dataTransfer.files);
+}
+
+function handleFiles(fileList) {
+  Array.from(fileList).forEach(file => {
+    const type = getFileType(file);
+    const cfg = SUPPORTED[type];
+    if (!cfg) { alert(`Unsupported file type: ${file.name}\nSupported: PDF, PNG, JPG, WEBP, GIF, BMP, TXT, MD`); return; }
+    if (file.size > 20*1024*1024) { alert(`${file.name} is too large (max 20MB)`); return; }
+    if (uploadedFiles.find(f=>f.name===file.name&&f.size===file.size)) return;
+
+    const reader = new FileReader();
+    if (cfg.isText) {
+      reader.onload = e => {
+        uploadedFiles.push({ name:file.name, type, size:file.size, mediaType:null, isText:true, textContent:e.target.result, base64:null, cfg });
+        renderFileList();
+      };
+      reader.readAsText(file);
+    } else {
+      reader.onload = e => {
+        const b64 = e.target.result.split(',')[1];
+        let previewUrl = null;
+        if (type.startsWith('image/')) previewUrl = e.target.result;
+        uploadedFiles.push({ name:file.name, type, size:file.size, mediaType:cfg.mediaType, isText:false, base64:b64, previewUrl, cfg });
+        renderFileList();
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+}
+
+function renderFileList() {
+  ['fileList','fileList2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = '';
+    uploadedFiles.forEach((f,i) => {
+      const div = document.createElement('div');
+      div.className = 'file-item';
+      const preview = f.previewUrl
+        ? `<img class="file-preview-thumb" src="${f.previewUrl}" alt=""/>`
+        : `<span class="file-icon">${f.cfg.icon}</span>`;
+      div.innerHTML = `
+        ${preview}
+        <div class="file-info">
+          <div class="file-name">${f.name}</div>
+          <div class="file-meta">${formatSize(f.size)}</div>
+        </div>
+        <span class="file-badge ${f.cfg.badge}">${f.cfg.label}</span>
+        <button class="file-del" onclick="removeFile(${i})" title="Remove">✕</button>`;
+      el.appendChild(div);
+    });
+  });
+}
+
+function removeFile(i) {
+  uploadedFiles.splice(i,1);
+  renderFileList();
+}
+
+// ── Output toggles ─────────────────────────────────────────────────────────
+function togOut(btn) {
+  const k = btn.dataset.key;
+  btn.classList.toggle('on');
+  if (activeOutputs.has(k)) activeOutputs.delete(k); else activeOutputs.add(k);
+}
+
+// ── Build API message content ──────────────────────────────────────────────
+// FIX: always collect ALL files + ALL text regardless of active tab
+function buildContent(prompt) {
+  const content = [];
+
+  // All uploaded files
+  uploadedFiles.forEach(f => {
+    if (f.isText) {
+      content.push({ type:'text', text:'[File: '+f.name+']\n'+f.textContent });
+    } else if (f.type === 'application/pdf') {
+      content.push({ type:'document', source:{ type:'base64', media_type:'application/pdf', data:f.base64 } });
+    } else if (f.type.startsWith('image/')) {
+      content.push({ type:'image', source:{ type:'base64', media_type:f.mediaType, data:f.base64 } });
+    }
+  });
+
+  // Collect text from BOTH textareas so no tab is missed
+  const t1 = (document.getElementById('notes') ? document.getElementById('notes').value : '').trim();
+  const t2 = (document.getElementById('notes2') ? document.getElementById('notes2').value : '').trim();
+  const combined = [t1, t2].filter(Boolean).join('\n\n');
+  if (combined) content.push({ type:'text', text:'[Notes]\n'+combined });
+
+  // Task prompt always last
+  content.push({ type:'text', text: prompt });
+  return content;
+}
+
+// ── Claude API call ────────────────────────────────────────────────────────
+async function callClaude(content, apiKey) {
+  let res;
+  try {
+    res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: content }]
+      })
+    });
+  } catch(networkErr) {
+    throw new Error('Network error – could not reach Anthropic API.\nMake sure you are online and the API key is correct.\n\nDetails: ' + networkErr.message);
+  }
+
+  if (!res.ok) {
+    let errMsg = 'HTTP ' + res.status;
+    try {
+      const errBody = await res.json();
+      errMsg = errBody.error?.message || JSON.stringify(errBody);
+    } catch(_) {
+      errMsg = await res.text().catch(()=>errMsg);
+    }
+    throw new Error('API error (' + res.status + '): ' + errMsg);
+  }
+
+  const data = await res.json();
+  return (data.content || []).map(c => c.text || '').join('');
+}
+
+// ── Output prompt configs ──────────────────────────────────────────────────
+function getPrompt(key, sub, lvl, goal) {
+  const ctx = [sub&&`Subject: ${sub}`, lvl&&`Level: ${lvl}`, goal&&`Goal: ${goal}`].filter(Boolean).join(' | ');
+  const ctxStr = ctx ? `\nContext: ${ctx}` : '';
+  const prompts = {
+    summary:    `You are a study assistant. Analyze ALL the provided content (files + notes) and write a clear, well-structured summary capturing every key idea.${ctxStr}\nOrganize with main topics, key points, and important details. Be thorough.`,
+    flashcards: `You are a study assistant. Analyze ALL the provided content and create 10-15 flashcards for active recall.${ctxStr}\nReturn ONLY a JSON array, no extra text, no markdown fences:\n[{"q":"question","a":"answer"},...]`,
+    quiz:       `You are a study assistant. Analyze ALL the provided content and create 6 multiple choice questions.${ctxStr}\nReturn ONLY a JSON array, no extra text:\n[{"q":"question","options":["A. opt","B. opt","C. opt","D. opt"],"answer":"A. opt"},...]`,
+    mindmap:    `You are a study assistant. Analyze ALL the provided content and extract a mind map structure.${ctxStr}\nReturn ONLY valid JSON, no extra text, no markdown fences: {"center":"Main Topic","branches":[{"label":"Branch","color":"#7b6cf6","children":["subtopic","subtopic"]}]} Use 4-6 branches with 2-4 children each. Give each branch a different color from: #7b6cf6 #a8f060 #f06090 #f0a030 #30c0f0.`,
+    studyplan:  `You are a study assistant. Analyze ALL the provided content and create a 7-day spaced repetition study plan.${ctxStr}\nInclude specific daily goals, review sessions, and recommended study techniques for each day.`,
+    explain:    `You are a study assistant. Analyze ALL the provided content and explain all key concepts in very simple, friendly language for a complete beginner.${ctxStr}\nUse analogies, examples, and clear plain language. Avoid jargon.`,
+    keywords:   `You are a study assistant. Analyze ALL the provided content and extract the most important key terms.${ctxStr}\nReturn ONLY a JSON array, no extra text:\n[{"term":"term","definition":"brief definition"},...]`
+  };
+  return prompts[key];
+}
+
+// ── Generate ───────────────────────────────────────────────────────────────
+async function generate() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const sub = document.getElementById('subject').value;
+  const lvl = document.getElementById('level').value;
+  const goal = document.getElementById('goal').value;
+
+  // Gather text input
+  const textNotes = (document.getElementById('notes')?.value||'') + (document.getElementById('notes2')?.value||'');
+  const hasFiles = uploadedFiles.length > 0;
+  const hasText = textNotes.trim().length > 0;
+
+  if (!apiKey) { alert('Please enter your Anthropic API key.'); return; }
+  if (!hasFiles && !hasText) { alert('Please upload files or paste some notes first.'); return; }
+  if (activeOutputs.size === 0) { alert('Please select at least one output to generate.'); return; }
+
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true; btn.textContent = '⏳ Generating…';
+
+  const progressBar = document.getElementById('progressBar');
+  const progressFill = document.getElementById('progressFill');
+  progressBar.style.display = 'block';
+  progressFill.style.width = '0%';
+
+  const resultsDiv = document.getElementById('results');
+  resultsDiv.innerHTML = '';
+
+  const keys = [...activeOutputs];
+  let done = 0;
+
+  // Create all result blocks first
+  keys.forEach(key => {
+    const icons = { summary:'📋', flashcards:'🃏', quiz:'✅', mindmap:'🗺️', studyplan:'📅', explain:'💡', keywords:'🔑' };
+    const labels = { summary:'Summary', flashcards:'Flashcards', quiz:'Quiz / MCQs', mindmap:'Mind Map', studyplan:'Study Plan', explain:'Simple Explanation', keywords:'Key Terms' };
+    const block = document.createElement('div');
+    block.className = 'r-block';
+    block.innerHTML = `
+      <div class="r-head">
+        <div class="r-label"><span>${icons[key]}</span>${labels[key]}</div>
+        <span class="r-status s-loading" id="st-${key}"><span class="spin"></span> generating…</span>
+      </div>
+      <div class="r-body" id="bd-${key}"></div>`;
+    resultsDiv.appendChild(block);
+  });
+
+  // Run SEQUENTIALLY — one at a time — to avoid concurrent request limit errors
+  for (const key of keys) {
+    const prompt = getPrompt(key, sub, lvl, goal);
+    const msgContent = buildContent(prompt);
+    const stEl = document.getElementById('st-' + key);
+    const bdEl = document.getElementById('bd-' + key);
+    // Mark current one as active
+    stEl.innerHTML = '<span class="spin"></span> generating…';
+    stEl.className = 'r-status s-loading';
+    try {
+      const text = await callClaude(msgContent, apiKey);
+      stEl.textContent = '✓ done'; stEl.className = 'r-status s-done';
+      renderOutput(key, text, bdEl);
+    } catch(err) {
+      stEl.textContent = '✕ error'; stEl.className = 'r-status s-err';
+      bdEl.style.color = 'var(--danger)';
+      bdEl.style.fontFamily = "'DM Mono', monospace";
+      bdEl.style.fontSize = '12px';
+      bdEl.textContent = '⚠ ' + err.message;
+    }
+    done++;
+    progressFill.style.width = Math.round((done / keys.length) * 100) + '%';
+    // Small pause between requests to stay within rate limits
+    if (done < keys.length) await new Promise(r => setTimeout(r, 500));
+  }
+
+  btn.disabled = false; btn.textContent = '✦ Generate Study Material';
+  setTimeout(()=>{ progressBar.style.display='none'; }, 1200);
+}
+
+// ── Render outputs ─────────────────────────────────────────────────────────
+function renderOutput(key, text, el) {
+  const tryJSON = (t) => { try { return JSON.parse(t.replace(/```json|```/g,'').trim()); } catch { return null; } };
+
+  if (key === 'flashcards') {
+    const cards = tryJSON(text);
+    if (cards && Array.isArray(cards)) {
+      el.style.padding = '0';
+      el.innerHTML = `<div class="fc-tip">↩ click a card to flip and reveal answer</div>`;
+      const grid = document.createElement('div'); grid.className = 'fc-grid';
+      cards.forEach(c => {
+        const fc = document.createElement('div'); fc.className = 'fc';
+        fc.innerHTML = `<div class="q">${c.q}</div><div class="a">${c.a}</div>`;
+        fc.onclick = () => fc.classList.toggle('flipped');
+        grid.appendChild(fc);
+      });
+      el.appendChild(grid); return;
+    }
+  }
+
+  if (key === 'quiz') {
+    const qs = tryJSON(text);
+    if (qs && Array.isArray(qs)) {
+      el.style.padding = '0';
+      const list = document.createElement('div'); list.className = 'quiz-list';
+      qs.forEach((q,i) => {
+        const qDiv = document.createElement('div'); qDiv.className = 'quiz-q';
+        qDiv.innerHTML = `<div class="qt">${i+1}. ${q.q}</div><div class="opts"></div>`;
+        const opts = qDiv.querySelector('.opts');
+        q.options.forEach(opt => {
+          const o = document.createElement('div'); o.className = 'opt'; o.textContent = opt;
+          o.onclick = () => {
+            if (qDiv.querySelector('.correct')) return;
+            const isCorrect = opt === q.answer || opt.startsWith(q.answer.split('.')[0]);
+            o.classList.add(isCorrect ? 'correct' : 'wrong');
+            if (!isCorrect) opts.querySelectorAll('.opt').forEach(x => { if(x.textContent===q.answer||x.textContent.startsWith(q.answer.split('.')[0])) x.classList.add('correct'); });
+          };
+          opts.appendChild(o);
+        });
+        list.appendChild(qDiv);
+      });
+      el.appendChild(list); return;
+    }
+  }
+
+  if (key === 'mindmap') {
+    const parsed = tryJSON(text);
+    if (parsed && parsed.center) {
+      // Defer so the element has layout width
+      setTimeout(() => renderMindMap(parsed, el), 50);
+      return;
+    }
+    // Fallback: plain text if JSON parse failed
+    el.textContent = text;
+    return;
+  }
+
+  if (key === 'keywords') {
+    const terms = tryJSON(text);
+    if (terms && Array.isArray(terms)) {
+      el.style.padding = '0';
+      const list = document.createElement('div'); list.className = 'kw-list';
+      terms.forEach(t => {
+        const row = document.createElement('div'); row.className = 'kw-row';
+        row.innerHTML = `<span class="kw-term">${t.term}</span><span class="kw-def">${t.definition}</span>`;
+        list.appendChild(row);
+      });
+      el.appendChild(list); return;
+    }
+  }
+
+  el.textContent = text;
+}
+
+// ── Mind Map Renderer ──────────────────────────────────────────────────────
+function renderMindMap(data, el) {
+  el.style.padding = '0';
+  el.style.background = '#0f1016';
+
+  const W = el.offsetWidth || 680;
+  const H = 480;
+  const cx = W / 2, cy = H / 2;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = W * 2; canvas.height = H * 2;
+  canvas.style.cssText = 'width:100%;height:' + H + 'px;display:block;border-radius:0 0 12px 12px;';
+  el.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(2, 2);
+
+  // Background
+  ctx.fillStyle = '#0f1016';
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle grid dots
+  ctx.fillStyle = 'rgba(255,255,255,0.04)';
+  for (let x = 20; x < W; x += 28) {
+    for (let y = 20; y < H; y += 28) {
+      ctx.beginPath(); ctx.arc(x, y, 1, 0, Math.PI*2); ctx.fill();
+    }
+  }
+
+  const branches = data.branches || [];
+  const angleStep = (Math.PI * 2) / branches.length;
+  const R1 = 110; // center to branch node
+  const R2 = 195; // branch node to child node
+
+  function roundRect(x, y, w, h, r, fill, stroke) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.arcTo(x + w, y, x + w, y + r, r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+    ctx.lineTo(x + r, y + h);
+    ctx.arcTo(x, y + h, x, y + h - r, r);
+    ctx.lineTo(x, y + r);
+    ctx.arcTo(x, y, x + r, y, r);
+    ctx.closePath();
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke(); }
+  }
+
+  function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1,3),16);
+    const g = parseInt(hex.slice(3,5),16);
+    const b = parseInt(hex.slice(5,7),16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  function drawLabel(text, x, y, color, fontSize, bold) {
+    ctx.font = (bold ? '600 ' : '400 ') + fontSize + 'px Outfit, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const maxW = 100;
+    // word wrap
+    const words = text.split(' ');
+    let lines = [], line = '';
+    words.forEach(w => {
+      const test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; }
+      else line = test;
+    });
+    lines.push(line);
+    const lineH = fontSize + 3;
+    const totalH = lines.length * lineH;
+    lines.forEach((l, i) => {
+      ctx.fillStyle = color;
+      ctx.fillText(l, x, y - totalH/2 + lineH/2 + i * lineH);
+    });
+    return lines.length;
+  }
+
+  // Draw branch connections and nodes
+  branches.forEach((branch, i) => {
+    const angle = angleStep * i - Math.PI / 2;
+    const bx = cx + Math.cos(angle) * R1;
+    const by = cy + Math.sin(angle) * R1;
+    const color = branch.color || '#7b6cf6';
+
+    // Line: center → branch
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(bx, by);
+    ctx.strokeStyle = hexToRgba(color, 0.5);
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Branch node box
+    ctx.font = '500 11px Outfit, sans-serif';
+    const bw = Math.max(ctx.measureText(branch.label).width + 22, 70);
+    const bh = 28;
+    roundRect(bx - bw/2, by - bh/2, bw, bh, 7, hexToRgba(color, 0.18), color);
+    ctx.fillStyle = color;
+    ctx.font = '500 11px Outfit, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(branch.label, bx, by);
+
+    // Children
+    const children = branch.children || [];
+    const childSpread = Math.min(Math.PI * 0.55, (children.length - 1) * 0.32);
+    const childAngleStart = angle - childSpread / 2;
+    const childAngleStep = children.length > 1 ? childSpread / (children.length - 1) : 0;
+
+    children.forEach((child, j) => {
+      const cAngle = children.length === 1 ? angle : childAngleStart + childAngleStep * j;
+      const ccx = cx + Math.cos(cAngle) * R2;
+      const ccy = cy + Math.sin(cAngle) * R2;
+
+      // Line: branch → child (curved)
+      ctx.beginPath();
+      const midX = (bx + ccx) / 2;
+      const midY = (by + ccy) / 2;
+      ctx.moveTo(bx, by);
+      ctx.quadraticCurveTo(midX, midY, ccx, ccy);
+      ctx.strokeStyle = hexToRgba(color, 0.3);
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      // Child pill
+      ctx.font = '400 10px Outfit, sans-serif';
+      const cw = Math.max(ctx.measureText(child).width + 18, 50);
+      const ch = 22;
+      roundRect(ccx - cw/2, ccy - ch/2, cw, ch, 11, hexToRgba(color, 0.1), hexToRgba(color, 0.4));
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.font = '400 10px Outfit, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(child, ccx, ccy);
+    });
+  });
+
+  // Center node
+  const centerR = 46;
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, centerR);
+  grad.addColorStop(0, '#3a2fa0');
+  grad.addColorStop(1, '#1e1a5a');
+  ctx.beginPath();
+  ctx.arc(cx, cy, centerR, 0, Math.PI * 2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.strokeStyle = '#7b6cf6';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.font = '600 12px Outfit, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const centerWords = (data.center || 'Topic').split(' ');
+  const lineH = 15;
+  const totalH = centerWords.length * lineH;
+  centerWords.forEach((word, i) => {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(word, cx, cy - totalH/2 + lineH/2 + i * lineH);
+  });
+
+  // Download button
+  const dlBtn = document.createElement('button');
+  dlBtn.textContent = '⬇ Download mind map';
+  dlBtn.style.cssText = 'display:block;margin:10px auto;background:var(--surface3);border:1px solid var(--border2);color:var(--muted);padding:7px 18px;border-radius:7px;font-size:12px;font-family:"DM Mono",monospace;cursor:pointer;';
+  dlBtn.onclick = () => {
+    const a = document.createElement('a');
+    a.download = 'mindmap.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  };
+  el.appendChild(dlBtn);
+}
+</script>
+</body>
+</html>
